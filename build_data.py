@@ -666,6 +666,9 @@ def build():
     js_content += "window.MCSP_DATA = " + json.dumps(payload, ensure_ascii=False, separators=(",", ":")) + ";\n"
     js_path.write_text(js_content, encoding="utf-8")
 
+    json_path = out_dir / "vysledky_2026.json"
+    json_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+
     csv_path = out_dir / "vysledky_2026.csv"
     with csv_path.open("w", encoding="utf-8-sig", newline="") as f:
         writer = csv.writer(f)
@@ -687,7 +690,7 @@ def build():
             ])
 
     print("Summary:", json.dumps(summary, ensure_ascii=False, indent=2))
-    print(f"Generated {js_path} ({js_path.stat().st_size} bytes) and {csv_path}")
+    print(f"Generated {js_path} ({js_path.stat().st_size} bytes), {json_path} and {csv_path}")
 
 
 if __name__ == "__main__":

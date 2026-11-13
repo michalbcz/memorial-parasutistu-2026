@@ -1,17 +1,215 @@
 (function () {
   "use strict";
 
-  const DATA = window.MCSP_DATA;
-  const SUMMARY = DATA.summary;
-  const WAVES = DATA.waves;
-  const TEAMS = DATA.teams;
-  const TEAM_BY_ID = new Map(TEAMS.map((t) => [t.id, t]));
+  const WAVE_ORDER = [
+    "Alpha", "Bravo", "Charlie", "Delta", "Echo", "Foxtrot", "Golf", "Hotel",
+    "India", "Juliet", "Kilo", "Lima", "Mike", "November", "Oscar", "Papa",
+    "Quebec", "Romeo", "Siera", "Tango", "Uniform", "Victor", "Whisky",
+    "X-Ray", "Yenkee", "Zulu",
+  ];
+
+  let DATA = null;
+  let SUMMARY = null;
+  let WAVES = null;
+  let TEAMS = null;
+  let TEAM_BY_ID = null;
 
   let selectedTeamId = 407; // Bleskový přesun
   let waveChart = null;
   let waveMode = "counts";
   let simTimer = null;
   let sortState = { key: "id", asc: true };
+
+  function parseHHMM(s) {
+    if (!s) return null;
+    const parts = s.split(":");
+    if (parts.length !== 2) return null;
+    return Number(parts[0]) * 60 + Number(parts[1]);
+  }
+
+  function parseCSVText(text) {
+    const clean = text.replace(/^\uFEFF/, "");
+    const rows = [];
+    let row = [];
+    let field = "";
+    let inQuotes = false;
+
+    for (let i = 0; i < clean.length; i++) {
+      const ch = clean[i];
+      if (inQuotes) {
+        if (ch === '"') {
+          if (clean[i + 1] === '"') {
+            field += '"';
+            i++;
+          } else {
+            inQuotes = false;
+          }
+        } else {
+          field += ch;
+        }
+      } else if (ch === '"') {
+        inQuotes = true;
+      } else if (ch === ",") {
+        row.push(field);
+        field = "";
+      } else if (ch === "\n") {
+        row.push(field);
+        rows.push(row);
+        row = [];
+        field = "";
+      } else if (ch !== "\r") {
+        field += ch;
+      }
+    }
+    if (field.length > 0 || row.length > 0) {
+      row.push(field);
+      rows.push(row);
+    }
+    return rows;
+  }
+
+  function buildDatasetFromCSV(csvText) {
+    const rawRows = parseCSVText(csvText);
+    if (rawRows.length < 2) throw new Error("Empty CSV");
+
+    const teams = [];
+    for (let i = 1; i < rawRows.length; i++) {
+      const r = rawRows[i];
+      if (!r || r.length < 16 || !r[0]) continue;
+      const id = Number(r[0]);
+      const wave = r[1];
+      const schedStart = r[2];
+      const start = r[3];
+      const name = r[4];
+      const status = r[5];
+      const arrival = r[6];
+      const total = r[7];
+      const totalMin = r[8] ? Number(r[8]) : null;
+      const rankOverall = r[9] ? Number(r[9]) : null;
+      const rankInWave = r[10] ? Number(r[10]) : null;
+      const under18h = r[11] === "Ano" ? true : r[11] === "Ne" ? false : null;
+      const speedKmh = r[12] ? Number(r[12]) : null;
+      const paceMinKm = r[13] || null;
+      const waveJumper = r[14] === "Ano";
+      const anomaly = r[15] || null;
+
+      const startMin = parseHHMM(start);
+      const schedMin = parseHHMM(schedStart);
+      const arrMin = parseHHMM(arrival);
+      const arrAbs = arrMin !== null && startMin !== null
+        ? (arrMin >= startMin ? arrMin : arrMin + 1440)
+        : null;
+
+      const isUnassigned = status === "u" || anomaly === "unassigned";
+
+      teams.push({
+        id,
+        wave,
+        wave_scheduled_start: schedStart,
+        wave_scheduled_min: schedMin,
+        start,
+        start_min: startMin,
+        name,
+        is_unassigned: isUnassigned,
+        status,
+        arrival,
+        arrival_abs_min: arrAbs,
+        total,
+        total_min: totalMin,
+        speed_kmh: speedKmh,
+        pace_min_km: paceMinKm,
+        under_18h: under18h,
+        wave_jumper: waveJumper,
+        start_diff_min: startMin !== null && schedMin !== null && !isUnassigned ? startMin - schedMin : 0,
+        anomaly,
+        rank_overall: rankOverall,
+        rank_in_wave: rankInWave,
+        percentile: null,
+      });
+    }
+
+    const timedFinishers = teams
+      .filter((t) => t.status === "a" && t.total_min !== null)
+      .sort((a, b) => a.total_min - b.total_min || a.id - b.id);
+
+    timedFinishers.forEach((t, idx) => {
+      t.percentile = +((100 * (timedFinishers.length - (idx + 1))) / (timedFinishers.length - 1)).toFixed(1);
+    });
+
+    const waves = WAVE_ORDER.map((wName) => {
+      const wAll = teams.filter((t) => t.wave === wName && !t.is_unassigned);
+      const wA = wAll.filter((t) => t.status === "a");
+      const wTimed = wA.filter((t) => t.total_min !== null).sort((a, b) => a.total_min - b.total_min || a.id - b.id);
+      const wX = wAll.filter((t) => t.status === "x");
+      const wN = wAll.filter((t) => t.status === "n");
+      const starters = wA.length + wX.length;
+      const times = wTimed.map((t) => t.total_min);
+      const avg = times.length ? +(times.reduce((s, v) => s + v, 0) / times.length).toFixed(1) : null;
+      return {
+        wave: wName,
+        scheduled_start: wAll[0]?.wave_scheduled_start || "",
+        scheduled_min: wAll[0]?.wave_scheduled_min || 0,
+        registered: wAll.length,
+        started: starters,
+        finished: wA.length,
+        finished_timed: wTimed.length,
+        under_18h: wTimed.filter((t) => t.under_18h).length,
+        over_18h: wTimed.filter((t) => t.under_18h === false).length,
+        dnf: wX.length,
+        dns: wN.length,
+        success_rate: starters ? +((100 * wA.length) / starters).toFixed(1) : 0,
+        avg_min: avg,
+        best_min: times.length ? times[0] : null,
+        best_team_id: wTimed[0]?.id || null,
+        best_team_name: wTimed[0]?.name || null,
+        jumpers: wAll.filter((t) => t.wave_jumper).length,
+      };
+    });
+
+    const aTeams = teams.filter((t) => t.status === "a");
+    const xTeams = teams.filter((t) => t.status === "x");
+    const nTeams = teams.filter((t) => t.status === "n");
+    const uTeams = teams.filter((t) => t.is_unassigned);
+    const allTimes = timedFinishers.map((t) => t.total_min);
+    const avgMin = +(allTimes.reduce((s, v) => s + v, 0) / allTimes.length).toFixed(1);
+    const mid = Math.floor(allTimes.length / 2);
+    const medMin = allTimes.length % 2 ? allTimes[mid] : (allTimes[mid - 1] + allTimes[mid]) / 2;
+
+    const summary = {
+      event_name: "Memoriál československých parašutistů 2026",
+      theme: "Tři králové – Pocta pplk. Josefu Mašínovi",
+      date: "7. 11. 2026",
+      distance_km: 70.0,
+      limit_hours: 18,
+      password: "SKOŘICE",
+      total_rows: teams.length,
+      assigned_teams: teams.length - uTeams.length,
+      unassigned_slots: uTeams.length,
+      started: aTeams.length + xTeams.length,
+      finished_total: aTeams.length,
+      finished_timed: timedFinishers.length,
+      finished_untimed: aTeams.length - timedFinishers.length,
+      under_18h: timedFinishers.filter((t) => t.under_18h).length,
+      over_18h: timedFinishers.filter((t) => t.under_18h === false).length,
+      dnf: xTeams.length,
+      dns_named: nTeams.length,
+      dns_pdf_total: nTeams.length + uTeams.length + 1,
+      success_rate_pct: +((100 * aTeams.length) / (aTeams.length + xTeams.length)).toFixed(1),
+      success_rate_pdf_pct: 80,
+      avg_min: avgMin,
+      avg_str: fmtMin(avgMin),
+      median_min: medMin,
+      median_str: fmtMin(medMin),
+      fastest_min: timedFinishers[0].total_min,
+      fastest_str: timedFinishers[0].total,
+      slowest_min: timedFinishers[timedFinishers.length - 1].total_min,
+      slowest_str: timedFinishers[timedFinishers.length - 1].total,
+      wave_jumpers_count: teams.filter((t) => t.wave_jumper).length,
+      total_km_finishers: aTeams.length * 2 * 70,
+    };
+
+    return { summary, waves, teams };
+  }
 
   // Helpers
   function escapeHtml(str) {
@@ -942,13 +1140,34 @@
     renderRows();
   }
 
-  // Boot
-  initPatrol();
-  renderKPIs();
-  initTeamSearch();
-  initDuel();
-  initSimulator();
-  initCharts();
-  renderTop10();
-  initTable();
+  // Boot: primárně živě z vysledky_2026.csv, se záložním window.MCSP_DATA
+  async function boot() {
+    const badge = document.getElementById("csv-status-badge");
+    try {
+      const resp = await fetch("vysledky_2026.csv", { cache: "no-store" });
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const csvText = await resp.text();
+      DATA = buildDatasetFromCSV(csvText);
+      if (badge) badge.textContent = `✓ Načteno živě z vysledky_2026.csv (${DATA.teams.length} řádků)`;
+    } catch (err) {
+      DATA = window.MCSP_DATA;
+      if (badge) badge.textContent = `✓ Načteno z offline archivu (${DATA.teams.length} řádků)`;
+    }
+
+    SUMMARY = DATA.summary;
+    WAVES = DATA.waves;
+    TEAMS = DATA.teams;
+    TEAM_BY_ID = new Map(TEAMS.map((t) => [t.id, t]));
+
+    initPatrol();
+    renderKPIs();
+    initTeamSearch();
+    initDuel();
+    initSimulator();
+    initCharts();
+    renderTop10();
+    initTable();
+  }
+
+  boot();
 })();

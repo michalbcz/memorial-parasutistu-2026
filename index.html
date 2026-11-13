@@ -24,6 +24,7 @@
         <a href="#grafy">Grafy &amp; Výsadky</a>
         <a href="#pribehy">Forenzní audit &amp; Kuriozity</a>
         <a href="#tabulka">Kompletní listina (409)</a>
+        <a href="#data-archiv">Data &amp; PDF ke stažení</a>
       </nav>
       <div class="patrol-box" title="Zadej heslo okupační hlídce pro rychlé propuštění">
         <label for="patrol-input">Heslo hlídce:</label>
@@ -56,12 +57,19 @@
       </p>
 
       <div class="hero-actions">
-        <a class="btn btn-primary" href="Vysledkova_listina_2026.pdf" target="_blank" rel="noopener">📄 Oficiální PDF výsledkovka</a>
-        <a class="btn" href="vysledky_2026.csv" download>⬇️ Stáhnout čisté CSV</a>
+        <a class="btn btn-primary" href="Vysledkova_listina_2026.pdf" download="Vysledkova_listina_2026.pdf">⬇️ Stáhnout archivní PDF</a>
+        <a class="btn" href="Vysledkova_listina_2026.pdf" target="_blank" rel="noopener">📄 Otevřít PDF v prohlížeči</a>
+        <a class="btn btn-primary" href="vysledky_2026.csv" download="vysledky_2026.csv">📊 Stáhnout zdrojové CSV</a>
+        <a class="btn" href="vysledky_2026.json" download="vysledky_2026.json">{ } JSON dataset</a>
         <a class="btn" href="https://mapy.com/s/rarurapefa" target="_blank" rel="noopener">🗺️ Trasa 2026 (Mapy.cz)</a>
         <a class="btn" href="https://www.memorialparasutistu.cz/info/" target="_blank" rel="noopener">🪂 Web závodu</a>
         <a class="btn" href="https://photos.app.goo.gl/nzH4qvKPnM8of4rH9" target="_blank" rel="noopener">📸 Fotogalerie</a>
         <a class="btn" href="https://youtu.be/tLBPTSBO3SU" target="_blank" rel="noopener">🎬 Oficiální video</a>
+      </div>
+
+      <div id="data-source-pill" style="margin-bottom:1.1rem; display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center;">
+        <span class="badge badge-a" id="csv-status-badge">⏳ Načítám zdrojové CSV...</span>
+        <span class="muted" style="font-size:0.82rem;">Aplikace čte výsledky přímo z <a href="vysledky_2026.csv" target="_blank" rel="noopener"><code>vysledky_2026.csv</code></a> • Archiv originálu: <a href="Vysledkova_listina_2026.pdf" target="_blank" rel="noopener"><code>Vysledkova_listina_2026.pdf</code></a></span>
       </div>
 
       <div id="kpi-grid" class="kpi-grid"></div>
@@ -283,6 +291,47 @@
             </thead>
             <tbody id="results-tbody"></tbody>
           </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ZDROJOVA DATA & ARCHIV -->
+    <section id="data-archiv" class="section">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title">Zdrojová data &amp; Archiv výsledkové listiny <span class="section-tag">Otevřená data</span></h2>
+          <p class="section-desc">Přímé odkazy ke stažení lokálně archivovaného PDF originálu i strukturovaného CSV/JSON souboru, ze kterého tato aplikace živě čte data.</p>
+        </div>
+      </div>
+
+      <div class="grid-3">
+        <div class="story-card">
+          <h3>📄 Archivní PDF výsledkovka</h3>
+          <p>Lokálně zaarchivovaná kopie oficiální 13stránkové výsledkové listiny z roku 2026 (533 kB). Neztratí se, ani kdyby původní odkaz na Google Drive vypršel.</p>
+          <div style="display:flex; flex-wrap:wrap; gap:0.5rem; margin-top:0.8rem;">
+            <a class="btn btn-primary btn-sm" href="Vysledkova_listina_2026.pdf" download="Vysledkova_listina_2026.pdf">⬇️ Stáhnout PDF</a>
+            <a class="btn btn-sm" href="Vysledkova_listina_2026.pdf" target="_blank" rel="noopener">👁️ Otevřít PDF</a>
+            <a class="btn btn-sm" href="https://drive.google.com/file/d/1nMTf2EDx5GF3pgA-SBE6DoQg2-LFUAPg/view?usp=sharing" target="_blank" rel="noopener">☁️ Google Drive originál</a>
+          </div>
+        </div>
+
+        <div class="story-card">
+          <h3>📊 Zdrojové CSV (primární zdroj aplikace)</h3>
+          <p>Vygenerované UTF-8 CSV (409 startovních čísel + vypočtená pořadí, rychlost km/h, tempo min/km, skokani mimo vlnu a anomálie). Aplikace ho načítá přímo přes <code>fetch('vysledky_2026.csv')</code>.</p>
+          <div style="display:flex; flex-wrap:wrap; gap:0.5rem; margin-top:0.8rem;">
+            <a class="btn btn-primary btn-sm" href="vysledky_2026.csv" download="vysledky_2026.csv">⬇️ Stáhnout CSV</a>
+            <a class="btn btn-sm" href="vysledky_2026.csv" target="_blank" rel="noopener">🔗 Přímý odkaz na CSV</a>
+          </div>
+        </div>
+
+        <div class="story-card">
+          <h3>🧩 JSON dataset &amp; Reprodukovatelnost</h3>
+          <p>Kompletní strukturovaný JSON se souhrny, statistikami 26 vln a všemi týmy, včetně Python generátoru <code>build_data.py</code> pro vlastní analýzy.</p>
+          <div style="display:flex; flex-wrap:wrap; gap:0.5rem; margin-top:0.8rem;">
+            <a class="btn btn-primary btn-sm" href="vysledky_2026.json" download="vysledky_2026.json">⬇️ Stáhnout JSON</a>
+            <a class="btn btn-sm" href="vysledky_2026.json" target="_blank" rel="noopener">🔗 Přímý odkaz na JSON</a>
+            <a class="btn btn-sm" href="build_data.py" target="_blank" rel="noopener">🐍 build_data.py</a>
+          </div>
         </div>
       </div>
     </section>
