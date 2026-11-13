@@ -8,15 +8,19 @@
     "X-Ray", "Yenkee", "Zulu",
   ];
 
+  const ROUTE_KM = 70.0;
+
   let DATA = null;
   let SUMMARY = null;
   let WAVES = null;
   let TEAMS = null;
   let TEAM_BY_ID = null;
+  let WAVE_BY_NAME = null;
 
   let selectedTeamId = 407; // Bleskový přesun
   let waveChart = null;
   let waveMode = "counts";
+  let lastWavesMobile = null;
   let simTimer = null;
   let sortState = { key: "id", asc: true };
 
@@ -25,6 +29,37 @@
     const parts = s.split(":");
     if (parts.length !== 2) return null;
     return Number(parts[0]) * 60 + Number(parts[1]);
+  }
+
+  function fmtMin(m) {
+    if (m === null || m === undefined) return "–";
+    const total = Math.round(m);
+    const h = Math.floor(total / 60);
+    const mm = total % 60;
+    return `${h}:${mm < 10 ? "0" : ""}${mm}`;
+  }
+
+  function formatPace(totalMin) {
+    const secPerKm = (totalMin * 60) / ROUTE_KM;
+    let mins = Math.floor(secPerKm / 60);
+    let secs = Math.round(secPerKm % 60);
+    if (secs === 60) {
+      mins += 1;
+      secs = 0;
+    }
+    return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
+  }
+
+  function calcMedian(sortedNums) {
+    if (!sortedNums.length) return null;
+    const mid = Math.floor(sortedNums.length / 2);
+    return sortedNums.length % 2
+      ? sortedNums[mid]
+      : (sortedNums[mid - 1] + sortedNums[mid]) / 2;
+  }
+
+  function fmtNumCz(n, decimals = 2) {
+    return n.toFixed(decimals).replace(".", ",");
   }
 
   function parseCSVText(text) {
@@ -145,6 +180,9 @@
       const starters = wA.length + wX.length;
       const times = wTimed.map((t) => t.total_min);
       const avg = times.length ? +(times.reduce((s, v) => s + v, 0) / times.length).toFixed(1) : null;
+      const med = calcMedian(times);
+      const medSpeed = med ? +(ROUTE_KM / (med / 60)).toFixed(2) : null;
+
       return {
         wave: wName,
         scheduled_start: wAll[0]?.wave_scheduled_start || "",
@@ -159,6 +197,9 @@
         dns: wN.length,
         success_rate: starters ? +((100 * wA.length) / starters).toFixed(1) : 0,
         avg_min: avg,
+        median_min: med,
+        median_str: med ? fmtMin(med) : null,
+        median_speed_kmh: medSpeed,
         best_min: times.length ? times[0] : null,
         best_team_id: wTimed[0]?.id || null,
         best_team_name: wTimed[0]?.name || null,
@@ -172,14 +213,13 @@
     const uTeams = teams.filter((t) => t.is_unassigned);
     const allTimes = timedFinishers.map((t) => t.total_min);
     const avgMin = +(allTimes.reduce((s, v) => s + v, 0) / allTimes.length).toFixed(1);
-    const mid = Math.floor(allTimes.length / 2);
-    const medMin = allTimes.length % 2 ? allTimes[mid] : (allTimes[mid - 1] + allTimes[mid]) / 2;
+    const medMin = calcMedian(allTimes);
 
     const summary = {
       event_name: "Memoriál československých parašutistů 2026",
       theme: "Tři králové – Pocta pplk. Josefu Mašínovi",
       date: "7. 11. 2026",
-      distance_km: 70.0,
+      distance_km: ROUTE_KM,
       limit_hours: 18,
       password: "SKOŘICE",
       total_rows: teams.length,
@@ -198,8 +238,11 @@
       success_rate_pdf_pct: 80,
       avg_min: avgMin,
       avg_str: fmtMin(avgMin),
+      avg_speed_kmh: +(ROUTE_KM / (avgMin / 60)).toFixed(2),
       median_min: medMin,
       median_str: fmtMin(medMin),
+      median_speed_kmh: +(ROUTE_KM / (medMin / 60)).toFixed(2),
+      median_pace_str: formatPace(Math.round(medMin)),
       fastest_min: timedFinishers[0].total_min,
       fastest_str: timedFinishers[0].total,
       slowest_min: timedFinishers[timedFinishers.length - 1].total_min,
@@ -211,21 +254,12 @@
     return { summary, waves, teams };
   }
 
-  // Helpers
   function escapeHtml(str) {
     return String(str)
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;");
-  }
-
-  function fmtMin(m) {
-    if (m === null || m === undefined) return "–";
-    const total = Math.round(m);
-    const h = Math.floor(total / 60);
-    const mm = total % 60;
-    return `${h}:${mm < 10 ? "0" : ""}${mm}`;
   }
 
   function fmtClockAbs(absMin) {
@@ -245,14 +279,14 @@
       return `<span class="badge badge-over">a • nad 18h</span>`;
     }
     if (t.status === "x") {
-      if (t.total_min !== null) return `<span class="badge badge-anom">x • s časem ${t.total}</span>`;
+      if (t.total_min !== null) return `<span class="badge badge-anom">x • čas ${t.total}</span>`;
       return `<span class="badge badge-x">x • DNF</span>`;
     }
     if (t.status === "n") return `<span class="badge badge-n">n • DNS</span>`;
     return "";
   }
 
-  // 1. Patrol Password Easter Egg
+  // 1. Patrol Password
   function initPatrol() {
     const input = document.getElementById("patrol-input");
     const btn = document.getElementById("patrol-btn");
@@ -265,9 +299,9 @@
       const val = input.value.trim().toUpperCase();
       if (val === "SKOŘICE" || val === "SKORICE") {
         banner.classList.add("visible");
-        input.style.borderColor = "var(--emerald)";
+        input.style.borderColor = "var(--signal-green)";
       } else {
-        input.style.borderColor = "var(--red)";
+        input.style.borderColor = "var(--signal-red)";
         input.value = "";
         input.placeholder = "Zkus SKOŘICE";
       }
@@ -280,55 +314,55 @@
     close.addEventListener("click", () => banner.classList.remove("visible"));
   }
 
-  // 2. KPI Grid
+  // 2. Telemetry Ledger in Hero
   function renderKPIs() {
     const grid = document.getElementById("kpi-grid");
-    const cards = [
+    const cells = [
       {
         cls: "",
         label: "Odstartovalo hlídek",
-        value: SUMMARY.started,
-        sub: `Z ${SUMMARY.total_rows} čísel (${SUMMARY.dns_named} DNS + 4 neobsazená + č. 410)`,
+        value: `${SUMMARY.started}`,
+        sub: `Z ${SUMMARY.total_rows} čísel (${SUMMARY.dns_named} DNS + 4 neobs. + č. 410)`,
       },
       {
-        cls: "cyan",
+        cls: "accent-green",
         label: "Dokončilo (Stav a)",
         value: `${SUMMARY.finished_total} (${SUMMARY.success_rate_pdf_pct} %)`,
-        sub: `Přesně ${SUMMARY.success_rate_pct} % • ${SUMMARY.finished_untimed} bez zapsaného času`,
+        sub: `Přesně ${fmtNumCz(SUMMARY.success_rate_pct, 1)} % • ${SUMMARY.finished_untimed} bez času`,
       },
       {
-        cls: "emerald",
+        cls: "accent-green",
         label: "V 18h limitu (≤ 18:00)",
-        value: SUMMARY.under_18h,
-        sub: `${((SUMMARY.under_18h / SUMMARY.started) * 100).toFixed(1)} % startujících získalo medaili`,
+        value: `${SUMMARY.under_18h}`,
+        sub: `${fmtNumCz((SUMMARY.under_18h / SUMMARY.started) * 100, 1)} % ze startujících`,
       },
       {
-        cls: "amber",
+        cls: "accent-amber",
         label: "Nad limit (> 18:00)",
-        value: SUMMARY.over_18h,
-        sub: "Nejtěsnější smůla: #2 SPARTA II (18:01)",
+        value: `${SUMMARY.over_18h}`,
+        sub: "Nejtěsnější: #2 SPARTA II (18:01)",
       },
       {
-        cls: "yellow",
+        cls: "accent-sand",
         label: "Nedokončilo (DNF / x)",
-        value: SUMMARY.dnf,
-        sub: `${((SUMMARY.dnf / SUMMARY.started) * 100).toFixed(1)} % odpadlo na trase`,
+        value: `${SUMMARY.dnf}`,
+        sub: `${fmtNumCz((SUMMARY.dnf / SUMMARY.started) * 100, 1)} % ze startujících`,
       },
       {
-        cls: "cyan",
-        label: "Rekord & Průměr",
-        value: SUMMARY.fastest_str,
-        sub: `Průměr ${SUMMARY.avg_str} • Medián ${SUMMARY.median_str} • Nejdéle ${SUMMARY.slowest_str}`,
+        cls: "accent-green",
+        label: "Medián rychlosti & času",
+        value: `${fmtNumCz(SUMMARY.median_speed_kmh)} km/h`,
+        sub: `Medián ${SUMMARY.median_str} (${SUMMARY.median_pace_str} /km) • Rekord ${SUMMARY.fastest_str}`,
       },
     ];
 
-    grid.innerHTML = cards
+    grid.innerHTML = cells
       .map(
         (c) => `
-      <div class="kpi-card ${c.cls}">
-        <div class="kpi-label">${c.label}</div>
-        <div class="kpi-value">${c.value}</div>
-        <div class="kpi-sub">${c.sub}</div>
+      <div class="ledger-cell ${c.cls}">
+        <div class="ledger-label">${c.label}</div>
+        <div class="ledger-value">${c.value}</div>
+        <div class="ledger-sub">${c.sub}</div>
       </div>`
       )
       .join("");
@@ -339,13 +373,16 @@
     const t = TEAM_BY_ID.get(id);
     if (!t) return;
     selectedTeamId = id;
+    const w = WAVE_BY_NAME.get(t.wave);
 
     const container = document.getElementById("team-dossier");
-    const diffAvg = t.total_min !== null ? t.total_min - SUMMARY.avg_min : null;
-    const diffAvgStr =
-      diffAvg === null
-        ? "–"
-        : `${diffAvg <= 0 ? "−" : "+"}${fmtMin(Math.abs(diffAvg))} vs. průměr`;
+
+    let speedDeltaStr = "–";
+    if (t.speed_kmh !== null) {
+      const diff = t.speed_kmh - SUMMARY.median_speed_kmh;
+      const sign = diff >= 0 ? "+" : "−";
+      speedDeltaStr = `${sign}${fmtNumCz(Math.abs(diff))} km/h vs. medián závodu`;
+    }
 
     let markerPct = 50;
     if (t.total_min !== null) {
@@ -358,21 +395,39 @@
     const flags = [];
     if (t.wave_jumper) {
       flags.push(
-        `<span class="badge badge-anom">Skokan mimo vlnu (${t.wave} má ${t.wave_scheduled_start}, start ${t.start})</span>`
+        `<span class="badge badge-anom">Mimo vlnu (${t.wave} plán ${t.wave_scheduled_start}, start ${t.start})</span>`
       );
     }
     if (t.anomaly === "dnf_with_time") {
-      flags.push(`<span class="badge badge-anom">Anomálie: DNF (x) s časem v cíli!</span>`);
+      flags.push(`<span class="badge badge-anom">Anomálie: DNF (x) s časem v cíli</span>`);
     }
     if (t.anomaly === "finisher_no_time") {
       flags.push(`<span class="badge badge-anom">Anomálie: Dokončil (a) bez času</span>`);
     }
 
+    const waveRankVal = t.rank_in_wave && w
+      ? `${t.rank_in_wave}. / ${w.finished_timed}`
+      : "–";
+    const waveRankSub = w
+      ? `ze ${w.started} odstartovaných (${w.registered} v ${t.wave})`
+      : "";
+
+    const overallRankVal = t.rank_overall
+      ? `${t.rank_overall}. / ${SUMMARY.finished_timed}`
+      : "–";
+    const overallRankSub = `ze ${SUMMARY.started} odstartovaných • ${
+      t.percentile !== null ? `Top ${fmtNumCz(100 - t.percentile, 1)} %` : "bez času"
+    }`;
+
+    const medianWaveStr = w && w.median_speed_kmh
+      ? `Vlna ${t.wave}: ${fmtNumCz(w.median_speed_kmh)} km/h (${w.median_str})`
+      : `Vlna ${t.wave}: bez času`;
+
     container.innerHTML = `
-      <div class="dossier-card">
+      <div class="dossier-sheet">
         <div class="dossier-head">
           <div>
-            <div class="dossier-num">STARTOVNÍ ČÍSLO #${t.id} • VÝSADEK ${t.wave.toUpperCase()}</div>
+            <div class="dossier-num">ČÍSLO #${t.id} • VÝSADEK ${t.wave.toUpperCase()}</div>
             <h4 class="dossier-name">${escapeHtml(t.name)}</h4>
             <div class="dossier-meta">
               Start: <strong>${t.start}</strong> (plán vlny ${t.wave_scheduled_start}) •
@@ -385,30 +440,36 @@
           </div>
         </div>
 
-        <div class="dossier-stats">
+        <div class="dossier-ledger">
           <div class="dstat">
             <div class="dstat-k">Celkové pořadí</div>
-            <div class="dstat-v" style="color:var(--cyan);">${t.rank_overall ? `${t.rank_overall}. / 292` : "–"}</div>
+            <div class="dstat-v" style="color:var(--signal-green);">${overallRankVal}</div>
+            <div class="dstat-sub">${overallRankSub}</div>
           </div>
           <div class="dstat">
             <div class="dstat-k">Pořadí ve výsadku</div>
-            <div class="dstat-v">${t.rank_in_wave ? `${t.rank_in_wave}.` : "–"}</div>
+            <div class="dstat-v">${waveRankVal}</div>
+            <div class="dstat-sub">${waveRankSub}</div>
           </div>
           <div class="dstat">
             <div class="dstat-k">Celkový čas</div>
             <div class="dstat-v">${t.total || "–"}</div>
+            <div class="dstat-sub">${t.total_min !== null ? `Průměr závodu ${SUMMARY.avg_str}` : "Bez cílového času"}</div>
           </div>
           <div class="dstat">
-            <div class="dstat-k">Rychlost / Tempo</div>
-            <div class="dstat-v" style="font-size:1.05rem;">${t.speed_kmh ? `${t.speed_kmh} km/h` : "–"}<br><span class="muted" style="font-size:0.78rem;">${t.pace_min_km ? `${t.pace_min_km} /km` : ""}</span></div>
+            <div class="dstat-k">Rychlost &amp; Tempo</div>
+            <div class="dstat-v">${t.speed_kmh ? `${fmtNumCz(t.speed_kmh)} km/h` : "–"}</div>
+            <div class="dstat-sub">${t.pace_min_km ? `${t.pace_min_km} /km • ${speedDeltaStr}` : "Bez měřené rychlosti"}</div>
           </div>
           <div class="dstat">
-            <div class="dstat-k">Percentil</div>
-            <div class="dstat-v">${t.percentile !== null ? `Top ${(100 - t.percentile).toFixed(1)} %` : "–"}</div>
+            <div class="dstat-k">Medián rychlosti (závod)</div>
+            <div class="dstat-v">${fmtNumCz(SUMMARY.median_speed_kmh)} km/h</div>
+            <div class="dstat-sub">${SUMMARY.median_pace_str} /km (čas ${SUMMARY.median_str})</div>
           </div>
           <div class="dstat">
-            <div class="dstat-k">Rozdíl vs. průměr</div>
-            <div class="dstat-v" style="font-size:0.98rem;">${diffAvgStr}</div>
+            <div class="dstat-k">Medián rychlosti (vlna)</div>
+            <div class="dstat-v">${w && w.median_speed_kmh ? `${fmtNumCz(w.median_speed_kmh)} km/h` : "–"}</div>
+            <div class="dstat-sub">${medianWaveStr}</div>
           </div>
         </div>
 
@@ -416,7 +477,8 @@
           t.total_min !== null
             ? `<div class="dist-bar-wrap">
                 <div class="dist-bar-label">
-                  <span>Nejrychlejší (${SUMMARY.fastest_str})</span>
+                  <span>Rekord (${SUMMARY.fastest_str})</span>
+                  <span>Medián (${SUMMARY.median_str})</span>
                   <span>Limit 18:00</span>
                   <span>Nejpomalejší (${SUMMARY.slowest_str})</span>
                 </div>
@@ -424,7 +486,7 @@
                   <div class="dist-marker" style="left:${markerPct.toFixed(1)}%;" title="Pozice týmu"></div>
                 </div>
               </div>`
-            : `<p class="muted" style="margin:0; font-size:0.86rem;">Tento tým nemá v oficiální výsledkovce zapsaný cílový čas.</p>`
+            : `<p class="muted" style="margin:0; font-size:0.86rem;">Tento tým nemá v oficiální výsledkové listině zapsaný cílový čas.</p>`
         }
       </div>
     `;
@@ -478,7 +540,7 @@
             (t) => `
           <div class="ac-item" data-id="${t.id}">
             <span><strong class="mono">#${t.id}</strong> ${escapeHtml(t.name)} <span class="muted">(${t.wave})</span></span>
-            <span>${t.total || t.status}</span>
+            <span class="mono">${t.total || t.status}</span>
           </div>`
           )
           .join("");
@@ -517,8 +579,8 @@
 
     selA.innerHTML = optionsHtml;
     selB.innerHTML = optionsHtml;
-    selA.value = "407"; // Bleskový přesun
-    selB.value = "4";   // Sázavští zubři
+    selA.value = "407";
+    selB.value = "4";
 
     function updateDuel() {
       const a = TEAM_BY_ID.get(Number(selA.value));
@@ -531,29 +593,27 @@
       const diffMin = slower.total_min - faster.total_min;
       const maxTime = Math.max(a.total_min, b.total_min);
 
-      // Rovnoměrný model předběhnutí na 70 km trati
       let overtakeMsg = "";
       if (a.id === b.id) {
-        overtakeMsg = "Vybral jsi stejný tým proti sobě – remíza na každém metru.";
+        overtakeMsg = "Vybral jsi stejný tým proti sobě – shoda na každém kilometru.";
       } else {
-        const va = 70 / a.total_min; // km/min
+        const va = 70 / a.total_min;
         const vb = 70 / b.total_min;
-        // Čas t_abs kdy se potkají: va*(t - start_a) == vb*(t - start_b)
         if (Math.abs(va - vb) < 1e-9) {
-          overtakeMsg = `Oba týmy šly naprosto shodným tempem (${a.total})!`;
+          overtakeMsg = `Obě hlídky šly naprosto shodným tempem (${a.total}).`;
         } else {
           const tCross = (va * a.start_min - vb * b.start_min) / (va - vb);
           const kmCross = va * (tCross - a.start_min);
           if (kmCross > 0 && kmCross < 70) {
-            overtakeMsg = `🏃 <strong>Předběhnutí na trati!</strong> <strong>${escapeHtml(
+            overtakeMsg = `<strong>Předběhnutí na trati:</strong> <strong>${escapeHtml(
               faster.name
-            )}</strong> odstartoval později (${faster.start}), ale při průměrném tempu by dohnal a předběhl <strong>${escapeHtml(
+            )}</strong> odstartoval později (${faster.start}), ale při rovnoměrném tempu by dohnal a předběhl <strong>${escapeHtml(
               slower.name
-            )}</strong> zhruba na <strong>${kmCross.toFixed(1)}. km</strong> kolem <strong>${fmtClockAbs(
+            )}</strong> zhruba na <strong>${fmtNumCz(kmCross, 1)}. km</strong> kolem <strong>${fmtClockAbs(
               Math.round(tCross)
             )}</strong>.`;
           } else if (faster.arrival_abs_min < slower.arrival_abs_min) {
-            overtakeMsg = `⚡ <strong>${escapeHtml(
+            overtakeMsg = `<strong>${escapeHtml(
               faster.name
             )}</strong> byl rychlejší o <strong>${fmtMin(
               diffMin
@@ -561,11 +621,11 @@
               slower.arrival_abs_min
             )}).`;
           } else {
-            overtakeMsg = `⏱️ <strong>${escapeHtml(
+            overtakeMsg = `<strong>${escapeHtml(
               faster.name
             )}</strong> šel o <strong>${fmtMin(
               diffMin
-            )}</strong> čistého času rychleji, i když díky pozdějšímu startu (${faster.start} vs. ${slower.start}) dorazil do cíle později (${fmtClockAbs(
+            )}</strong> čistého času rychleji, ale vzhledem k pozdějšímu startu (${faster.start} vs. ${slower.start}) dorazil do cíle později (${fmtClockAbs(
               faster.arrival_abs_min
             )}).`;
           }
@@ -577,26 +637,26 @@
           <div class="lane">
             <div class="lane-head">
               <span><strong>#${a.id} ${escapeHtml(a.name)}</strong> (${a.wave}, start ${a.start})</span>
-              <span class="mono" style="color:var(--cyan);">${a.total} (${a.speed_kmh} km/h)</span>
+              <span class="mono" style="color:var(--signal-green);">${a.total} (${fmtNumCz(a.speed_kmh)} km/h)</span>
             </div>
             <div class="lane-bar">
-              <div class="lane-fill" style="width:${((a.total_min / maxTime) * 100).toFixed(1)}%; background:var(--cyan);"></div>
+              <div class="lane-fill" style="width:${((a.total_min / maxTime) * 100).toFixed(1)}%; background:var(--signal-green);"></div>
             </div>
           </div>
           <div class="lane">
             <div class="lane-head">
               <span><strong>#${b.id} ${escapeHtml(b.name)}</strong> (${b.wave}, start ${b.start})</span>
-              <span class="mono" style="color:var(--amber);">${b.total} (${b.speed_kmh} km/h)</span>
+              <span class="mono" style="color:var(--signal-amber);">${b.total} (${fmtNumCz(b.speed_kmh)} km/h)</span>
             </div>
             <div class="lane-bar">
-              <div class="lane-fill" style="width:${((b.total_min / maxTime) * 100).toFixed(1)}%; background:var(--amber);"></div>
+              <div class="lane-fill" style="width:${((b.total_min / maxTime) * 100).toFixed(1)}%; background:var(--signal-amber);"></div>
             </div>
           </div>
         </div>
         <div class="duel-verdict">
           <div>${overtakeMsg}</div>
-          <div class="muted" style="margin-top:0.4rem; font-size:0.82rem;">
-            Celkový rozdíl: <strong>${fmtMin(diffMin)}</strong> (${faster.rank_overall}. vs. ${slower.rank_overall}. místo celkově).
+          <div class="muted" style="margin-top:0.35rem; font-size:0.82rem;">
+            Celkový rozdíl: <strong>${fmtMin(diffMin)}</strong> (${faster.rank_overall}. vs. ${slower.rank_overall}. místo celkově • medián závodu ${fmtNumCz(SUMMARY.median_speed_kmh)} km/h).
           </div>
         </div>
       `;
@@ -635,7 +695,7 @@
       statsEl.innerHTML = `
         <div class="dstat">
           <div class="dstat-k">Vysazených vln</div>
-          <div class="dstat-v" style="color:var(--cyan);">${launchedWaves} / 26</div>
+          <div class="dstat-v" style="color:var(--signal-green);">${launchedWaves} / 26</div>
         </div>
         <div class="dstat">
           <div class="dstat-k">Odstartovalo hlídek</div>
@@ -643,17 +703,17 @@
         </div>
         <div class="dstat">
           <div class="dstat-k">Aktuálně v terénu (a+x)</div>
-          <div class="dstat-v" style="color:var(--amber);">${onTrailEstimate}</div>
+          <div class="dstat-v" style="color:var(--signal-amber);">${onTrailEstimate}</div>
         </div>
         <div class="dstat">
           <div class="dstat-k">Již v cíli (měření)</div>
-          <div class="dstat-v" style="color:var(--emerald);">${arrivedByNow.length} / 292</div>
+          <div class="dstat-v" style="color:var(--signal-green);">${arrivedByNow.length} / 292</div>
         </div>
       `;
 
       tickerEl.innerHTML = `
-        <div class="muted" style="font-family:var(--font-mono); font-size:0.76rem; text-transform:uppercase;">
-          📡 Právě dorazili do cíle (posledních 20 minut před ${fmtClockAbs(nowMin)}):
+        <div class="muted" style="font-family:var(--font-mono); font-size:0.75rem; text-transform:uppercase;">
+          Příchody do cíle (posledních 20 minut před ${fmtClockAbs(nowMin)}):
         </div>
         <div class="sim-ticker-list">
           ${
@@ -678,11 +738,11 @@
       if (simTimer) {
         clearInterval(simTimer);
         simTimer = null;
-        playBtn.textContent = "▶ Přehrát noc";
+        playBtn.textContent = "Přehrát noc";
         return;
       }
       if (Number(slider.value) >= 2040) slider.value = "495";
-      playBtn.textContent = "⏸ Pauza";
+      playBtn.textContent = "Pauza";
       simTimer = setInterval(() => {
         const step = 5 * Number(speedSel.value);
         let next = Number(slider.value) + step;
@@ -690,7 +750,7 @@
           next = 2040;
           clearInterval(simTimer);
           simTimer = null;
-          playBtn.textContent = "▶ Přehrát noc";
+          playBtn.textContent = "Přehrát noc";
         }
         slider.value = String(next);
         renderSim(next);
@@ -699,7 +759,6 @@
 
     renderSim(Number(slider.value));
 
-    // Hourly Arrivals Chart (21:00 Sat -> 10:00 Sun)
     const hours = [];
     for (let h = 21; h <= 34; h++) {
       const labelH = h % 24;
@@ -719,9 +778,9 @@
             label: "Týmů v cíli za hodinu",
             data: hours.map((x) => x.count),
             backgroundColor: hours.map((x) =>
-              x.count >= 40 ? "rgba(245, 158, 11, 0.8)" : "rgba(0, 229, 255, 0.65)"
+              x.count >= 40 ? "rgba(224, 159, 62, 0.85)" : "rgba(62, 196, 150, 0.72)"
             ),
-            borderRadius: 6,
+            borderRadius: 4,
           },
         ],
       },
@@ -730,21 +789,21 @@
         maintainAspectRatio: false,
         plugins: { legend: { display: false } },
         scales: {
-          x: { ticks: { color: "#b4c7ba" }, grid: { color: "rgba(255,255,255,0.05)" } },
-          y: { ticks: { color: "#b4c7ba" }, grid: { color: "rgba(255,255,255,0.07)" } },
+          x: { ticks: { color: "#a8b2a5" }, grid: { color: "rgba(255,255,255,0.04)" } },
+          y: { ticks: { color: "#a8b2a5" }, grid: { color: "rgba(255,255,255,0.06)" } },
         },
       },
     });
   }
 
-  // 6. Charts (Histogram, Waves, Scatter)
+  // 6. Charts (Histogram, Responsive Waves Alpha-Zulu, Scatter)
   function initCharts() {
-    Chart.defaults.color = "#b4c7ba";
-    Chart.defaults.font.family = "'Inter', sans-serif";
+    Chart.defaults.color = "#a8b2a5";
+    Chart.defaults.font.family = "'IBM Plex Sans', sans-serif";
 
     const finishers = TEAMS.filter((t) => t.status === "a" && t.total_min !== null);
 
-    // Histogram 30-min buckets from 10:30 (630) to 22:30 (1350)
+    // Histogram
     const bins = [];
     for (let m = 630; m < 1350; m += 30) {
       const cnt = finishers.filter((t) => t.total_min >= m && t.total_min < m + 30).length;
@@ -764,9 +823,9 @@
             label: "Počet týmů",
             data: bins.map((b) => b.cnt),
             backgroundColor: bins.map((b) =>
-              b.start < 1080 ? "rgba(0, 229, 255, 0.72)" : "rgba(245, 158, 11, 0.78)"
+              b.start < 1080 ? "rgba(62, 196, 150, 0.76)" : "rgba(224, 159, 62, 0.82)"
             ),
-            borderRadius: 5,
+            borderRadius: 4,
           },
         ],
       },
@@ -785,17 +844,44 @@
           },
         },
         scales: {
-          x: { grid: { display: false }, ticks: { maxRotation: 45, minRotation: 45 } },
-          y: { grid: { color: "rgba(255,255,255,0.07)" } },
+          x: { grid: { display: false }, ticks: { maxRotation: 45, minRotation: 45, autoSkip: false } },
+          y: { grid: { color: "rgba(255,255,255,0.06)" } },
         },
       },
     });
 
-    // Waves Chart
+    // Responsive Waves Chart (Alpha .. Zulu always visible; horizontal on mobile < 768px)
     function renderWaveChart(mode) {
       waveMode = mode;
+      const isMobile = window.innerWidth < 768;
+      lastWavesMobile = isMobile;
+
+      const box = document.getElementById("waves-chart-box");
+      box.classList.toggle("is-horizontal", isMobile);
+
       const ctx = document.getElementById("chart-waves");
       if (waveChart) waveChart.destroy();
+
+      const catScale = {
+        stacked: mode === "counts",
+        ticks: {
+          autoSkip: false,
+          color: "#a8b2a5",
+          font: { size: isMobile ? 11 : 10 },
+          maxRotation: isMobile ? 0 : 60,
+          minRotation: isMobile ? 0 : 50,
+        },
+        grid: { display: false },
+      };
+
+      const valScale = {
+        stacked: mode === "counts",
+        grid: { color: "rgba(255,255,255,0.06)" },
+        ticks: { color: "#a8b2a5" },
+        title: mode === "times"
+          ? { display: true, text: "Hodiny", color: "#a8b2a5" }
+          : { display: false },
+      };
 
       if (mode === "counts") {
         waveChart = new Chart(ctx, {
@@ -806,75 +892,89 @@
               {
                 label: "V limitu ≤18h",
                 data: WAVES.map((w) => w.under_18h),
-                backgroundColor: "rgba(0, 229, 255, 0.75)",
+                backgroundColor: "rgba(62, 196, 150, 0.8)",
               },
               {
                 label: "Nad 18h",
                 data: WAVES.map((w) => w.over_18h),
-                backgroundColor: "rgba(245, 158, 11, 0.78)",
+                backgroundColor: "rgba(224, 159, 62, 0.82)",
               },
               {
                 label: "Nedokončili (x)",
                 data: WAVES.map((w) => w.dnf),
-                backgroundColor: "rgba(234, 179, 8, 0.78)",
+                backgroundColor: "rgba(212, 180, 74, 0.82)",
               },
               {
                 label: "Nedorazili (n)",
                 data: WAVES.map((w) => w.dns),
-                backgroundColor: "rgba(239, 68, 68, 0.75)",
+                backgroundColor: "rgba(224, 108, 101, 0.8)",
               },
             ],
           },
           options: {
+            indexAxis: isMobile ? "y" : "x",
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
+              legend: {
+                labels: { boxWidth: 12, color: "#a8b2a5", font: { size: 11 } },
+              },
               tooltip: {
                 callbacks: {
                   afterBody: (items) => {
                     const w = WAVES[items[0].dataIndex];
-                    return `Úspěšnost startujících: ${w.success_rate} % (${w.finished}/${w.started})`;
+                    return `Úspěšnost: ${fmtNumCz(w.success_rate, 1)} % (${w.finished}/${w.started}) • Medián ${w.median_str || "–"}`;
                   },
                 },
               },
             },
-            scales: {
-              x: { stacked: true, ticks: { maxRotation: 60, minRotation: 45 } },
-              y: { stacked: true, grid: { color: "rgba(255,255,255,0.07)" } },
-            },
+            scales: isMobile
+              ? { x: valScale, y: catScale }
+              : { x: catScale, y: valScale },
           },
         });
       } else {
         waveChart = new Chart(ctx, {
-          type: "line",
+          type: isMobile ? "bar" : "line",
           data: {
             labels: WAVES.map((w) => w.wave),
             datasets: [
               {
-                label: "Průměrný čas vlny (hod)",
+                label: "Průměrný čas (hod)",
                 data: WAVES.map((w) => (w.avg_min ? +(w.avg_min / 60).toFixed(2) : null)),
-                borderColor: "#f59e0b",
-                backgroundColor: "rgba(245, 158, 11, 0.2)",
+                borderColor: "#e09f3e",
+                backgroundColor: isMobile ? "rgba(224, 159, 62, 0.78)" : "rgba(224, 159, 62, 0.2)",
                 tension: 0.25,
-                pointRadius: 4,
+                pointRadius: 3.5,
               },
               {
-                label: "Nejrychlejší čas vlny (hod)",
+                label: "Nejrychlejší čas (hod)",
                 data: WAVES.map((w) => (w.best_min ? +(w.best_min / 60).toFixed(2) : null)),
-                borderColor: "#00e5ff",
-                backgroundColor: "rgba(0, 229, 255, 0.2)",
+                borderColor: "#3ec496",
+                backgroundColor: isMobile ? "rgba(62, 196, 150, 0.8)" : "rgba(62, 196, 150, 0.2)",
                 tension: 0.25,
-                pointRadius: 4,
+                pointRadius: 3.5,
               },
             ],
           },
           options: {
+            indexAxis: isMobile ? "y" : "x",
             responsive: true,
             maintainAspectRatio: false,
-            scales: {
-              x: { ticks: { maxRotation: 60, minRotation: 45 } },
-              y: { grid: { color: "rgba(255,255,255,0.07)" }, title: { display: true, text: "Hodiny" } },
+            plugins: {
+              legend: {
+                labels: { boxWidth: 12, color: "#a8b2a5", font: { size: 11 } },
+              },
             },
+            scales: isMobile
+              ? {
+                  x: { ...valScale, min: 9, suggestedMax: 20 },
+                  y: catScale,
+                }
+              : {
+                  x: catScale,
+                  y: valScale,
+                },
           },
         });
       }
@@ -888,9 +988,20 @@
       });
     });
 
+    let resizeTimer = null;
+    window.addEventListener("resize", () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        const nowMobile = window.innerWidth < 768;
+        if (nowMobile !== lastWavesMobile) {
+          renderWaveChart(waveMode);
+        }
+      }, 150);
+    });
+
     renderWaveChart("counts");
 
-    // Scatter Plot: Start time vs Total time
+    // Scatter Plot
     const scatterUnder = finishers
       .filter((t) => t.under_18h)
       .map((t) => ({ x: t.start_min / 60, y: t.total_min / 60, team: t }));
@@ -905,14 +1016,14 @@
           {
             label: "V limitu ≤ 18h (237)",
             data: scatterUnder,
-            backgroundColor: "rgba(0, 229, 255, 0.72)",
+            backgroundColor: "rgba(62, 196, 150, 0.78)",
             pointRadius: 4.5,
             pointHoverRadius: 7,
           },
           {
             label: "Nad limit > 18h (55)",
             data: scatterOver,
-            backgroundColor: "rgba(245, 158, 11, 0.85)",
+            backgroundColor: "rgba(224, 159, 62, 0.88)",
             pointRadius: 5,
             pointHoverRadius: 7,
           },
@@ -943,14 +1054,14 @@
           x: {
             min: 8,
             max: 15,
-            title: { display: true, text: "Čas startu (hodina v sobotu)" },
-            grid: { color: "rgba(255,255,255,0.06)" },
+            title: { display: true, text: "Čas startu (hodina v sobotu)", color: "#a8b2a5" },
+            grid: { color: "rgba(255,255,255,0.05)" },
           },
           y: {
             min: 10,
             max: 23,
-            title: { display: true, text: "Celkový čas na trati (hodiny)" },
-            grid: { color: "rgba(255,255,255,0.06)" },
+            title: { display: true, text: "Celkový čas na trati (hodiny)", color: "#a8b2a5" },
+            grid: { color: "rgba(255,255,255,0.05)" },
           },
         },
       },
@@ -963,18 +1074,18 @@
       .sort((a, b) => a.rank_overall - b.rank_overall || a.id - b.id)
       .slice(0, 10);
 
-    const podiumClasses = ["gold", "silver", "bronze"];
-    const medals = ["🥇 1. MÍSTO", "🥈 2. MÍSTO", "🥉 3. MÍSTO"];
+    const podiumClasses = ["gold", "", ""];
+    const medals = ["1. MÍSTO CELKOVĚ", "2. MÍSTO CELKOVĚ", "3. MÍSTO CELKOVĚ"];
 
     document.getElementById("podium-grid").innerHTML = top10
       .slice(0, 3)
       .map(
         (t, idx) => `
       <div class="podium-card ${podiumClasses[idx]}" data-id="${t.id}">
-        <div class="mono" style="font-size:0.78rem; color:var(--amber);">${medals[idx]} • #${t.id} ${t.wave}</div>
-        <h4 style="font-family:var(--font-display); font-size:1.25rem; margin:0.3rem 0;">${escapeHtml(t.name)}</h4>
-        <div class="mono" style="font-size:1.55rem; font-weight:700; color:var(--cyan);">${t.total}</div>
-        <div class="muted" style="font-size:0.83rem;">Start ${t.start} → Cíl ${fmtClockAbs(t.arrival_abs_min)} • ${t.speed_kmh} km/h (${t.pace_min_km} /km)</div>
+        <div class="mono" style="font-size:0.76rem; color:var(--signal-amber);">${medals[idx]} • #${t.id} ${t.wave}</div>
+        <h4 style="font-family:var(--font-display); font-size:1.22rem; margin:0.3rem 0;">${escapeHtml(t.name)}</h4>
+        <div class="mono" style="font-size:1.5rem; font-weight:700; color:var(--signal-green);">${t.total}</div>
+        <div class="muted" style="font-size:0.83rem;">Start ${t.start} → Cíl ${fmtClockAbs(t.arrival_abs_min)} • ${fmtNumCz(t.speed_kmh)} km/h (${t.pace_min_km} /km)</div>
       </div>`
       )
       .join("");
@@ -1013,8 +1124,8 @@
                 <td>${t.wave}</td>
                 <td class="mono">${t.start}</td>
                 <td class="mono">${fmtClockAbs(t.arrival_abs_min)}</td>
-                <td class="mono" style="color:var(--cyan);"><strong>${t.total}</strong></td>
-                <td class="mono">${t.speed_kmh} km/h</td>
+                <td class="mono" style="color:var(--signal-green);"><strong>${t.total}</strong></td>
+                <td class="mono">${fmtNumCz(t.speed_kmh)} km/h</td>
                 <td class="mono">${t.pace_min_km} /km</td>
               </tr>`
               )
@@ -1032,7 +1143,7 @@
     });
   }
 
-  // 8. Complete 409-row Interactive Table
+  // 8. Complete 409-row Table
   function initTable() {
     const waveSel = document.getElementById("tbl-wave");
     const statusSel = document.getElementById("tbl-status");
@@ -1044,7 +1155,7 @@
     WAVES.forEach((w) => {
       const opt = document.createElement("option");
       opt.value = w.wave;
-      opt.textContent = `${w.wave} (${w.scheduled_start}) – ${w.success_rate} %`;
+      opt.textContent = `${w.wave} (${w.scheduled_start}) – ${fmtNumCz(w.success_rate, 1)} %`;
       waveSel.appendChild(opt);
     });
 
@@ -1094,12 +1205,12 @@
           <td class="mono">${t.rank_overall ? `${t.rank_overall}.` : "–"}</td>
           <td class="mono">${t.id}</td>
           <td>${t.wave}</td>
-          <td class="mono">${t.start}${t.wave_jumper ? ` <span title="Plán vlny ${t.wave_scheduled_start}">⚡</span>` : ""}</td>
+          <td class="mono">${t.start}${t.wave_jumper ? ` <span class="muted" title="Plán vlny ${t.wave_scheduled_start}">(mimo)</span>` : ""}</td>
           <td><strong>${escapeHtml(t.name)}</strong></td>
           <td>${statusBadge(t)}</td>
           <td class="mono">${t.arrival || "–"}</td>
           <td class="mono"><strong>${t.total || "–"}</strong></td>
-          <td class="mono">${t.speed_kmh ? `${t.speed_kmh} km/h <span class="muted">(${t.pace_min_km})</span>` : "–"}</td>
+          <td class="mono">${t.speed_kmh ? `${fmtNumCz(t.speed_kmh)} km/h <span class="muted">(${t.pace_min_km})</span>` : "–"}</td>
         </tr>`
         )
         .join("");
@@ -1148,16 +1259,17 @@
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
       const csvText = await resp.text();
       DATA = buildDatasetFromCSV(csvText);
-      if (badge) badge.textContent = `✓ Načteno živě z vysledky_2026.csv (${DATA.teams.length} řádků)`;
+      if (badge) badge.textContent = `Načteno živě z vysledky_2026.csv (${DATA.teams.length} řádků)`;
     } catch (err) {
       DATA = window.MCSP_DATA;
-      if (badge) badge.textContent = `✓ Načteno z offline archivu (${DATA.teams.length} řádků)`;
+      if (badge) badge.textContent = `Načteno z offline archivu (${DATA.teams.length} řádků)`;
     }
 
     SUMMARY = DATA.summary;
     WAVES = DATA.waves;
     TEAMS = DATA.teams;
     TEAM_BY_ID = new Map(TEAMS.map((t) => [t.id, t]));
+    WAVE_BY_NAME = new Map(WAVES.map((w) => [w.wave, w]));
 
     initPatrol();
     renderKPIs();

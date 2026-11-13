@@ -570,6 +570,10 @@ def build():
     assert sorted_finishers[1]["id"] == 344 and sorted_finishers[1]["total"] == "10:57"
     assert sorted_finishers[2]["id"] == 196 and sorted_finishers[2]["total"] == "11:24"
 
+    def fmt_min(m):
+        m_int = int(round(m))
+        return f"{m_int // 60}:{m_int % 60:02d}"
+
     # Pořadí ve výsadku
     waves_stats = []
     for wave_name, sched in WAVE_SCHEDULE:
@@ -590,6 +594,8 @@ def build():
         w_under_18 = [t for t in w_timed if t["under_18h"]]
         w_over_18 = [t for t in w_timed if not t["under_18h"]]
         w_times = [t["total_min"] for t in w_timed]
+        w_med_min = round(statistics.median(w_times), 1) if w_times else None
+        w_med_speed = round(ROUTE_KM / (w_med_min / 60.0), 2) if w_med_min else None
 
         waves_stats.append({
             "wave": wave_name,
@@ -605,7 +611,9 @@ def build():
             "dns": len(w_n),
             "success_rate": round(100.0 * len(w_a) / w_starters, 1) if w_starters else 0.0,
             "avg_min": round(statistics.mean(w_times), 1) if w_times else None,
-            "median_min": round(statistics.median(w_times), 1) if w_times else None,
+            "median_min": w_med_min,
+            "median_str": fmt_min(w_med_min) if w_med_min else None,
+            "median_speed_kmh": w_med_speed,
             "best_min": min(w_times) if w_times else None,
             "best_team_id": w_timed[0]["id"] if w_timed else None,
             "best_team_name": w_timed[0]["name"] if w_timed else None,
@@ -616,10 +624,8 @@ def build():
     all_times = [t["total_min"] for t in sorted_finishers]
     under_18_list = [t for t in sorted_finishers if t["under_18h"]]
     over_18_list = [t for t in sorted_finishers if not t["under_18h"]]
-
-    def fmt_min(m):
-        m_int = int(round(m))
-        return f"{m_int // 60}:{m_int % 60:02d}"
+    avg_all = round(statistics.mean(all_times), 1)
+    med_all = round(statistics.median(all_times), 1)
 
     summary = {
         "event_name": "Memoriál československých parašutistů 2026",
@@ -635,17 +641,20 @@ def build():
         "finished_total": len(a_teams),  # 294
         "finished_timed": len(timed_finishers),  # 292
         "finished_untimed": len(a_teams) - len(timed_finishers),  # 2
-        "under_18h": len(under_18_list),  # 233
-        "over_18h": len(over_18_list),  # 59
+        "under_18h": len(under_18_list),  # 237
+        "over_18h": len(over_18_list),  # 55
         "dnf": len(x_teams),  # 76
         "dns_named": len(n_teams),  # 35
         "dns_pdf_total": len(n_teams) + len(u_teams) + 1,  # 35 + 4 + row 410 = 40
         "success_rate_pct": round(100.0 * len(a_teams) / (len(a_teams) + len(x_teams)), 1),
         "success_rate_pdf_pct": 80,
-        "avg_min": round(statistics.mean(all_times), 1),
-        "avg_str": fmt_min(statistics.mean(all_times)),
-        "median_min": round(statistics.median(all_times), 1),
-        "median_str": fmt_min(statistics.median(all_times)),
+        "avg_min": avg_all,
+        "avg_str": fmt_min(avg_all),
+        "avg_speed_kmh": round(ROUTE_KM / (avg_all / 60.0), 2),
+        "median_min": med_all,
+        "median_str": fmt_min(med_all),
+        "median_speed_kmh": round(ROUTE_KM / (med_all / 60.0), 2),
+        "median_pace_str": format_pace(int(round(med_all))),
         "fastest_min": sorted_finishers[0]["total_min"],
         "fastest_str": sorted_finishers[0]["total"],
         "slowest_min": sorted_finishers[-1]["total_min"],

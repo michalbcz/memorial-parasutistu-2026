@@ -2,12 +2,12 @@
 <html lang="cs">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MČSP 2026 – Interaktivní operační analýza výsledků | Memoriál československých parašutistů</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>MČSP 2026 – Operační analýza výsledků | Memoriál československých parašutistů</title>
   <meta name="description" content="Detailní, zábavná a interaktivní analýza výsledkové listiny Memoriálu československých parašutistů 2026 (70 km, Chrudim, pocta pplk. Josefu Mašínovi)." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 </head>
@@ -15,18 +15,18 @@
   <header class="topbar">
     <div class="topbar-inner">
       <div class="brand">
-        <span class="brand-badge">MČSP 2026</span>
-        <span>Operační analýza výsledků</span>
+        <span class="brand-mark">MČSP 2026</span>
+        <span>Operační spis výsledků</span>
       </div>
       <nav class="nav-links" aria-label="Hlavní navigace">
-        <a href="#dossier">Taktická karta &amp; Duel</a>
+        <a href="#dossier">Karta &amp; Duel</a>
         <a href="#simulator">Simulátor noci</a>
         <a href="#grafy">Grafy &amp; Výsadky</a>
-        <a href="#pribehy">Forenzní audit &amp; Kuriozity</a>
-        <a href="#tabulka">Kompletní listina (409)</a>
-        <a href="#data-archiv">Data &amp; PDF ke stažení</a>
+        <a href="#pribehy">Forenzní audit</a>
+        <a href="#tabulka">Listina (409)</a>
+        <a href="#data-archiv">PDF &amp; CSV</a>
       </nav>
-      <div class="patrol-box" title="Zadej heslo okupační hlídce pro rychlé propuštění">
+      <div class="patrol-box" title="Zadej heslo okupační hlídce">
         <label for="patrol-input">Heslo hlídce:</label>
         <input id="patrol-input" type="text" placeholder="SKOŘICE" autocomplete="off" />
         <button id="patrol-btn" class="btn btn-sm btn-primary" type="button">Ověřit</button>
@@ -37,56 +37,68 @@
   <div id="secret-banner" class="secret-banner" role="status">
     <div class="secret-banner-inner">
       <div>
-        <strong style="color: var(--emerald);">✓ HLÍDKA OKUPAČNÍCH SIL PROPUŠTĚNA!</strong>
+        <strong style="color: var(--signal-green);">HLÍDKA OKUPAČNÍCH SIL PROPUŠTĚNA</strong> —
         <span>Heslo <code>SKOŘICE</code> přijato. Pokračujte v přesunu směr Chrudim.</span>
-        <span class="muted">Tajný štábní poznatek: Všech 294 týmů v cíli ušlo dohromady minimálně <strong id="secret-km">41 160 km</strong> (v přepočtu 1,03× kolem rovníku).</span>
+        <span class="secret-note">Štábní záznam: 294 hlídek v cíli ušlo dohromady minimálně <strong id="secret-km">41 160 km</strong>.</span>
       </div>
-      <button id="secret-close" class="btn btn-sm" type="button">Zavřít hlášení</button>
+      <button id="secret-close" class="btn btn-sm" type="button">Zavřít</button>
     </div>
   </div>
 
   <main class="container">
-    <!-- HERO & BRIEFING -->
+    <!-- HERO ARCHIVAL HEADER -->
     <section class="hero">
-      <div class="hero-eyebrow">7. 11. 2026 • Letiště Chrudim • Operace Tři králové: pplk. Josef Mašín</div>
-      <h1>Memoriál československých parašutistů <span>2026</span></h1>
+      <div class="hero-top-meta">
+        <span>SPIS MČSP-2026 // 7. 11. 2026 • LETIŠTĚ CHRUDIM • 43. VÝSADKOVÝ PLUK</span>
+        <span>CYKLUS TŘI KRÁLOVÉ • POCTA PPLK. JOSEFU MAŠÍNOVI • TRASA ~70 KM • LIMIT 18 HOD</span>
+      </div>
+      <h1>Memoriál československých parašutistů 2026</h1>
       <p class="hero-lead">
-        70 kilometrů noční Vysočinou a Železnými horami ve dvoučlenných hlídkách, 26 výsadkových vln od <code>Alpha</code> po <code>Zulu</code>,
-        striktní 18hodinový limit a heslo <strong>SKOŘICE</strong> proti okupačním hlídkám. Tady je kompletní datová pitva všech
-        <strong>409 startovních čísel</strong> z oficiální výsledkové listiny.
+        Sedmdesát kilometrů noční Vysočinou a Železnými horami ve dvoučlenných hlídkách, 26 výsadkových vln od <code>Alpha</code> po <code>Zulu</code>,
+        striktní 18hodinový limit a heslo <strong>SKOŘICE</strong> proti okupačním hlídkám. Kompletní datová pitva všech <strong>409 startovních čísel</strong>.
       </p>
 
       <div class="hero-actions">
-        <a class="btn btn-primary" href="Vysledkova_listina_2026.pdf" download="Vysledkova_listina_2026.pdf">⬇️ Stáhnout archivní PDF</a>
-        <a class="btn" href="Vysledkova_listina_2026.pdf" target="_blank" rel="noopener">📄 Otevřít PDF v prohlížeči</a>
-        <a class="btn btn-primary" href="vysledky_2026.csv" download="vysledky_2026.csv">📊 Stáhnout zdrojové CSV</a>
-        <a class="btn" href="vysledky_2026.json" download="vysledky_2026.json">{ } JSON dataset</a>
-        <a class="btn" href="https://mapy.com/s/rarurapefa" target="_blank" rel="noopener">🗺️ Trasa 2026 (Mapy.cz)</a>
-        <a class="btn" href="https://www.memorialparasutistu.cz/info/" target="_blank" rel="noopener">🪂 Web závodu</a>
-        <a class="btn" href="https://photos.app.goo.gl/nzH4qvKPnM8of4rH9" target="_blank" rel="noopener">📸 Fotogalerie</a>
-        <a class="btn" href="https://youtu.be/tLBPTSBO3SU" target="_blank" rel="noopener">🎬 Oficiální video</a>
+        <a class="btn btn-primary" href="Vysledkova_listina_2026.pdf" download="Vysledkova_listina_2026.pdf">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Stáhnout archivní PDF
+        </a>
+        <a class="btn" href="Vysledkova_listina_2026.pdf" target="_blank" rel="noopener">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          Otevřít PDF v prohlížeči
+        </a>
+        <a class="btn btn-primary" href="vysledky_2026.csv" download="vysledky_2026.csv">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3h18v18H3z"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+          Stáhnout zdrojové CSV
+        </a>
+        <a class="btn" href="vysledky_2026.json" download="vysledky_2026.json">JSON dataset</a>
+        <a class="btn" href="https://mapy.com/s/rarurapefa" target="_blank" rel="noopener">Trasa 2026 (Mapy.cz)</a>
+        <a class="btn" href="https://www.memorialparasutistu.cz/info/" target="_blank" rel="noopener">Web závodu</a>
+        <a class="btn" href="https://photos.app.goo.gl/nzH4qvKPnM8of4rH9" target="_blank" rel="noopener">Fotogalerie</a>
+        <a class="btn" href="https://youtu.be/tLBPTSBO3SU" target="_blank" rel="noopener">Video 2026</a>
       </div>
 
-      <div id="data-source-pill" style="margin-bottom:1.1rem; display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center;">
-        <span class="badge badge-a" id="csv-status-badge">⏳ Načítám zdrojové CSV...</span>
-        <span class="muted" style="font-size:0.82rem;">Aplikace čte výsledky přímo z <a href="vysledky_2026.csv" target="_blank" rel="noopener"><code>vysledky_2026.csv</code></a> • Archiv originálu: <a href="Vysledkova_listina_2026.pdf" target="_blank" rel="noopener"><code>Vysledkova_listina_2026.pdf</code></a></span>
+      <div class="data-source-bar">
+        <span class="badge badge-a" id="csv-status-badge">Načítám zdrojové CSV...</span>
+        <span>Primární zdroj dat: <a href="vysledky_2026.csv" target="_blank" rel="noopener"><code>vysledky_2026.csv</code></a> • Archiv originálu: <a href="Vysledkova_listina_2026.pdf" target="_blank" rel="noopener"><code>Vysledkova_listina_2026.pdf</code></a></span>
       </div>
 
-      <div id="kpi-grid" class="kpi-grid"></div>
+      <div id="kpi-grid" class="ledger-grid"></div>
     </section>
 
     <!-- TAKTICKA KARTA & DUEL -->
     <section id="dossier" class="section">
       <div class="section-header">
         <div>
-          <h2 class="section-title">Taktická karta týmu &amp; Duel na trati <span class="section-tag">Interaktivní</span></h2>
-          <p class="section-desc">Vyhledej jakýkoliv tým ze všech 409 řádků nebo si nasimuluj přímý souboj dvou hlídek na 70 km trati.</p>
+          <h2 class="section-title">Osobní operační složka &amp; Duel na trati</h2>
+          <p class="section-desc">Vyhledej libovolnou hlídku ze všech 409 řádků včetně přesného pořadí ve výsadku i srovnání s mediánem rychlosti závodu.</p>
         </div>
+        <span class="section-meta">INTERAKTIVNÍ VYHLEDÁVÁNÍ &amp; SIMULACE DOSTIHU</span>
       </div>
 
       <div class="grid-2">
         <div class="panel">
-          <h3 style="margin-top:0; font-family:var(--font-display);">🔍 Osobní operační složka týmu</h3>
+          <h3 class="panel-heading">Osobní operační složka týmu</h3>
           <div class="search-row">
             <div class="input-box">
               <input id="team-search" class="input-control" type="text" placeholder="Hledej název týmu nebo startovní číslo (např. 407, Ochechule, Bára)..." autocomplete="off" />
@@ -98,7 +110,7 @@
         </div>
 
         <div class="panel">
-          <h3 style="margin-top:0; font-family:var(--font-display);">⚔️ Duel: Kdo koho na trati předběhl?</h3>
+          <h3 class="panel-heading">Duel hlídek: Kdo koho na trati předběhl</h3>
           <div class="duel-controls">
             <select id="duel-a" class="input-control" aria-label="Tým A"></select>
             <div class="vs-pill">VS</div>
@@ -113,18 +125,19 @@
     <section id="simulator" class="section">
       <div class="section-header">
         <div>
-          <h2 class="section-title">26 hodin na trati v přímém přenosu <span class="section-tag">Simulátor noci</span></h2>
-          <p class="section-desc">Posuň čas od sobotního rána 08:15 do nedělních 10:00 a sleduj, jak se plnila trasa a kdy vrcholilo noční obléhání cíle.</p>
+          <h2 class="section-title">26 hodin na trati v přímém přenosu</h2>
+          <p class="section-desc">Posuň časovou osu od sobotního rána 08:15 do nedělních 10:00 a sleduj výsadky i noční obléhání cíle.</p>
         </div>
+        <span class="section-meta">ČASOVÁ OSA SO 08:15 – NE 10:00</span>
       </div>
 
       <div class="panel">
         <div class="sim-controls">
           <div id="sim-clock" class="sim-clock">SO 08:15</div>
-          <input id="sim-slider" class="sim-slider" type="range" min="495" max="2040" step="5" value="1380" />
+          <input id="sim-slider" class="sim-slider" type="range" min="495" max="2040" step="5" value="1380" aria-label="Čas na trati" />
           <div style="display:flex; gap:0.45rem; align-items:center;">
-            <button id="sim-play" class="btn btn-primary btn-sm" type="button">▶ Přehrát noc</button>
-            <select id="sim-speed" class="input-control" style="width:auto; padding:0.32rem 0.55rem; font-size:0.8rem;">
+            <button id="sim-play" class="btn btn-primary btn-sm" type="button">Přehrát noc</button>
+            <select id="sim-speed" class="input-control" style="width:auto; min-height:32px; padding:0.25rem 0.55rem; font-size:0.82rem;" aria-label="Rychlost přehrávání">
               <option value="1">1× (5 min)</option>
               <option value="3" selected>3× (15 min)</option>
               <option value="6">6× (30 min)</option>
@@ -135,10 +148,10 @@
         <div id="sim-stats" class="sim-stats"></div>
         <div id="sim-ticker" class="sim-ticker"></div>
 
-        <div style="margin-top:1.15rem;">
+        <div style="margin-top:1.25rem;">
           <div class="chart-toolbar">
-            <strong style="font-family:var(--font-display); font-size:0.98rem;">📊 Příchody do cíle podle hodiny (Sobota 21:00 – Neděle 10:00)</strong>
-            <span class="muted" style="font-size:0.82rem;">Zlatý vrchol nastal mezi 02:00 a 06:00 ráno</span>
+            <strong style="font-family:var(--font-display); font-size:1rem;">Příchody do cíle podle hodiny (Sobota 21:00 – Neděle 10:00)</strong>
+            <span class="muted" style="font-size:0.82rem;">Hlavní vlna dorazila mezi 02:00 a 06:00 ráno</span>
           </div>
           <div class="chart-box">
             <canvas id="chart-arrivals"></canvas>
@@ -151,15 +164,16 @@
     <section id="grafy" class="section">
       <div class="section-header">
         <div>
-          <h2 class="section-title">Analýza výkonů &amp; 26 výsadkových vln <span class="section-tag">Data &amp; Grafy</span></h2>
-          <p class="section-desc">Kdo měl největší úmrtnost na trati, proč odpolední vlny dodaly nejrychlejší vítěze a jak drsný byl 18hodinový cut-off.</p>
+          <h2 class="section-title">Analýza výkonů &amp; 26 výsadkových vln</h2>
+          <p class="section-desc">Rozložení časů kolem 18hodinového limitu a srovnání všech vln od Alpha po Zulu (na mobilu v přehledném horizontálním zobrazení).</p>
         </div>
+        <span class="section-meta">ALPHA AŽ ZULU (26 VLN)</span>
       </div>
 
       <div class="grid-2">
         <div class="panel">
           <div class="chart-toolbar">
-            <strong style="font-family:var(--font-display);">⏱️ Rozložení časů v cíli (po 30 minutách)</strong>
+            <strong style="font-family:var(--font-display);">Rozložení časů v cíli (po 30 minutách)</strong>
             <span class="badge badge-a">237 v limitu ≤18h • 55 nad limit</span>
           </div>
           <div class="chart-box">
@@ -169,25 +183,25 @@
 
         <div class="panel">
           <div class="chart-toolbar">
-            <strong style="font-family:var(--font-display);">🪂 Srovnání vln Alpha – Zulu</strong>
+            <strong style="font-family:var(--font-display);">Srovnání vln Alpha – Zulu</strong>
             <div class="tab-group">
               <button class="tab-btn active" data-wave-mode="counts" type="button">Počty &amp; Úspěšnost</button>
               <button class="tab-btn" data-wave-mode="times" type="button">Průměr &amp; Rekord</button>
             </div>
           </div>
-          <div class="chart-box">
+          <div id="waves-chart-box" class="chart-box-waves">
             <canvas id="chart-waves"></canvas>
           </div>
         </div>
       </div>
 
-      <div class="panel" style="margin-top:1.2rem;">
+      <div class="panel" style="margin-top:1.25rem;">
         <div class="chart-toolbar">
           <div>
-            <strong style="font-family:var(--font-display);">🎯 Startovní čas vs. Celkový čas všech 292 měřených týmů</strong>
-            <div class="muted" style="font-size:0.82rem;">Klikni na libovolný bod pro otevření operační karty týmu. Červená linie = limit 18:00.</div>
+            <strong style="font-family:var(--font-display);">Startovní čas vs. Celkový čas všech 292 měřených týmů</strong>
+            <div class="muted" style="font-size:0.82rem;">Klikni na libovolný bod pro otevření operační složky týmu.</div>
           </div>
-          <span class="badge badge-over">Největší skok: #407 Bleskový přesun (10:41)</span>
+          <span class="badge badge-over">Rekord: #407 Bleskový přesun (10:41)</span>
         </div>
         <div class="chart-box-tall">
           <canvas id="chart-scatter"></canvas>
@@ -199,43 +213,44 @@
     <section id="pribehy" class="section">
       <div class="section-header">
         <div>
-          <h2 class="section-title">Síň slávy, Forenzní audit &amp; Kuriozity <span class="section-tag">Zákulisí výsledků</span></h2>
-          <p class="section-desc">Co na první pohled v PDF neuvidíte: anomálie v časomíře, kletba jménem Bára, klub 18:01 i smečky, které šly bok po boku.</p>
+          <h2 class="section-title">Síň slávy, Forenzní audit &amp; Kuriozity</h2>
+          <p class="section-desc">Detaily skryté za čísly: anomálie v časomíře, kletba jménem Bára, klub 18:01 i smečky kráčející bok po boku.</p>
         </div>
+        <span class="section-meta">AUDIT OFICIÁLNÍHO PDF</span>
       </div>
 
-      <h3 style="font-family:var(--font-display); margin:0 0 0.75rem;">🏆 Pódium &amp; Top 10 nejrychlejších hlídek (kliknutím zobrazíš detail)</h3>
+      <h3 class="panel-heading">Pódium &amp; Top 10 nejrychlejších hlídek (kliknutím načteš složku)</h3>
       <div id="podium-grid" class="podium-grid"></div>
-      <div id="top10-wrap" class="panel" style="margin-bottom:1.4rem;"></div>
+      <div id="top10-wrap" class="panel" style="margin-bottom:1.35rem;"></div>
 
       <div class="grid-3">
         <article class="story-card">
-          <h3>🔎 Forenzní audit: 5 záhad PDF</h3>
+          <h3>Forenzní audit: 5 záhad PDF</h3>
           <ul class="story-list">
-            <li><strong>Případ #347 SEPO 224 (Victor):</strong> V kolonce stav svítí žluté <code>x</code> (nedokončili), ale u času příchodu je <code>3:42</code> a celkový čas <code>14:27</code>! Tajná chyba zápisu, nebo návrat po diskvalifikaci?</li>
+            <li><strong>Případ #347 SEPO 224 (Victor):</strong> V kolonce stav svítí žluté <code>x</code> (nedokončili), ale u času příchodu je <code>3:42</code> a celkový čas <code>14:27</code>.</li>
             <li><strong>Duchové z Yenkee:</strong> Týmy <strong>#378 Dukla</strong> a <strong>#382 Ninjago</strong> mají modré <code>a</code> (dokončili), ale žádný čas příchodu ani celkový čas.</li>
             <li><strong>Štábní matematika (370 / 40 / 76):</strong> 294 (<code>a</code>) + 76 (<code>x</code>) = 370 startujících. 35 jmenovaných <code>n</code> + 4 neobsazená čísla (<code>225, 261, 314, 320</code>) + prázdný řádek <code>410</code> = přesně 40 v hlavičce.</li>
-            <li><strong>51 skokanů mimo vlastní vlnu:</strong> Rekordmanem je <strong>#408 ElLin</strong> (výsadek Zulu 14:30, ale na trati už v 8:30, tj. o 6 hodin dřív!) a <strong>#350 Tým Brno</strong> (Whisky 13:45 → start 8:30).</li>
+            <li><strong>51 skokanů mimo vlastní vlnu:</strong> Rekordmanem je <strong>#408 ElLin</strong> (výsadek Zulu 14:30, ale na trati už v 8:30, tj. o 6 hodin dřív) a <strong>#350 Tým Brno</strong> (Whisky 13:45 → start 8:30).</li>
             <li><strong>Chrudimské NATO:</strong> Výsadky nesou originální pravopis <code>Siera</code>, <code>Whisky</code> a <code>Yenkee</code>.</li>
           </ul>
         </article>
 
         <article class="story-card">
-          <h3>🎭 Nominativní determinismus &amp; Kletba Báry</h3>
+          <h3>Nominativní determinismus &amp; Kletba Báry</h3>
           <ul class="story-list">
             <li><strong>Kletba jménem Bára:</strong> Oba týmy s Bárou v názvu nedokončily: <strong>#108 Může za to Bára!</strong> (<code>x</code>) i <strong>#306 Může za to Bára II</strong> (<code>x</code>).</li>
             <li><strong>Prorocké názvy:</strong> <strong>#349 Vzdát můžeš až zítra</strong> a <strong>#231 Neumime se rozhodnout</strong> dostaly <code>n</code> ještě před startem. <strong>#298 Snad už to dnes vyjde</strong> (<code>x</code>) nevyšlo.</li>
             <li><strong>Když selže navigace i chaos:</strong> Všechny tři týmy <strong>PATHFINDERS (#340, #341, #343)</strong> skončily s <code>x</code>, stejně jako <strong>#242 Chaos</strong> a <strong>#254 chaos2</strong>.</li>
-            <li><strong>Sladký vzdor:</strong> <strong>#123 Zoufalci</strong> to dali za parádních <code>13:26</code> (15. místo!), <strong>#62 Marná snaha</strong> za <code>16:17</code> a <strong>#332 Nezávislé ženy</strong> braly celkově <strong>6. místo</strong> (<code>11:37</code>)!</li>
-            <li><strong>Nejdelší název závodu:</strong> <strong>#248 Alfa squadra tým dynamickejch čuprstár sekáčskejch vlkoušů</strong> (58 znaků – v PDF přetekl z buňky!).</li>
+            <li><strong>Sladký vzdor:</strong> <strong>#123 Zoufalci</strong> to dali za parádních <code>13:26</code> (15. místo), <strong>#62 Marná snaha</strong> za <code>16:17</code> a <strong>#332 Nezávislé ženy</strong> braly celkově <strong>6. místo</strong> (<code>11:37</code>).</li>
+            <li><strong>Nejdelší název závodu:</strong> <strong>#248 Alfa squadra tým dynamickejch čuprstár sekáčskejch vlkoušů</strong> (58 znaků – v PDF přetekl z buňky).</li>
           </ul>
         </article>
 
         <article class="story-card">
-          <h3>🐺 Smečky, bratrstva &amp; Klub 18:01</h3>
+          <h3>Smečky, bratrstva &amp; Klub 18:01</h3>
           <ul class="story-list">
-            <li><strong>Nejtěsnější smůla limitu:</strong> <strong>#2 SPARTA II</strong> dorazila za <code>18:01</code> – o pouhou <strong>1 minutu</strong> nad 18h limit!</li>
-            <li><strong>Železný vytrvalec:</strong> <strong>#94 S.T.A.F.</strong> šel nejdelších <code>22:13</code>. Nejpozději ráno dorazil <strong>#293 WOLFRAM ALFA</strong> (v neděli v <code>10:00</code> dopoledne!).</li>
+            <li><strong>Nejtěsnější smůla limitu:</strong> <strong>#2 SPARTA II</strong> dorazila za <code>18:01</code> – o pouhou <strong>1 minutu</strong> nad 18h limit.</li>
+            <li><strong>Železný vytrvalec:</strong> <strong>#94 S.T.A.F.</strong> šel nejdelších <code>22:13</code>. Nejpozději ráno dorazil <strong>#293 WOLFRAM ALFA</strong> (v neděli v <code>10:00</code> dopoledne).</li>
             <li><strong>Taktická formace Divocí vlci I–III:</strong> Všichni tři v cíli v jediné minutě – <code>2:12</code> až <code>2:13</code> (<code>17:27–17:28</code>).</li>
             <li><strong>Alianční čtverka CZE/US 1–4:</strong> Čtyři týmy bok po boku za <code>16:26</code> a <code>16:27</code>.</li>
             <li><strong>Palmovská trojka:</strong> Tři týmy Loupežníků z Palmovky dorazily mezi <code>3:20</code> a <code>3:32</code>.</li>
@@ -249,8 +264,8 @@
     <section id="tabulka" class="section">
       <div class="section-header">
         <div>
-          <h2 class="section-title">Kompletní výsledková listina <span class="section-tag">409 startovních čísel</span></h2>
-          <p class="section-desc">Filtruj podle výsadku, stavu nebo anomálií, seřaď podle libovolného sloupce a kliknutím načti tým do taktické karty.</p>
+          <h2 class="section-title">Kompletní výsledková listina</h2>
+          <p class="section-desc">Filtruj podle výsadku, stavu nebo anomálií, seřaď podle libovolného sloupce a kliknutím načti tým do operační složky.</p>
         </div>
         <div id="table-count" class="badge badge-a">Zobrazeno 409 řádků</div>
       </div>
@@ -258,10 +273,10 @@
       <div class="panel">
         <div class="table-controls">
           <input id="tbl-search" class="input-control" style="flex:1; min-width:210px;" type="text" placeholder="Filtrovat podle názvu nebo čísla..." />
-          <select id="tbl-wave" class="input-control" style="width:auto; min-width:155px;">
+          <select id="tbl-wave" class="input-control" style="width:auto; min-width:170px;" aria-label="Filtrovat podle výsadku">
             <option value="ALL">Všechny výsadky (26)</option>
           </select>
-          <select id="tbl-status" class="input-control" style="width:auto; min-width:190px;">
+          <select id="tbl-status" class="input-control" style="width:auto; min-width:195px;" aria-label="Filtrovat podle stavu">
             <option value="ALL">Všechny stavy</option>
             <option value="a">Dokončili (a) – 294</option>
             <option value="under18">V limitu ≤ 18:00 – 237</option>
@@ -278,15 +293,15 @@
           <table>
             <thead>
               <tr>
-                <th data-sort="rank_overall">Poř. ⇅</th>
-                <th data-sort="id">Č. ⇅</th>
-                <th data-sort="wave">Výsadek ⇅</th>
-                <th data-sort="start_min">Na trati ⇅</th>
-                <th data-sort="name">Název týmu ⇅</th>
-                <th data-sort="status">Stav ⇅</th>
-                <th data-sort="arrival_abs_min">Příchod ⇅</th>
-                <th data-sort="total_min">Celkový čas ⇅</th>
-                <th data-sort="speed_kmh">Rychlost / Tempo ⇅</th>
+                <th data-sort="rank_overall">Poř.</th>
+                <th data-sort="id">Č.</th>
+                <th data-sort="wave">Výsadek</th>
+                <th data-sort="start_min">Na trati</th>
+                <th data-sort="name">Název týmu</th>
+                <th data-sort="status">Stav</th>
+                <th data-sort="arrival_abs_min">Příchod</th>
+                <th data-sort="total_min">Celkový čas</th>
+                <th data-sort="speed_kmh">Rychlost / Tempo</th>
               </tr>
             </thead>
             <tbody id="results-tbody"></tbody>
@@ -299,38 +314,39 @@
     <section id="data-archiv" class="section">
       <div class="section-header">
         <div>
-          <h2 class="section-title">Zdrojová data &amp; Archiv výsledkové listiny <span class="section-tag">Otevřená data</span></h2>
-          <p class="section-desc">Přímé odkazy ke stažení lokálně archivovaného PDF originálu i strukturovaného CSV/JSON souboru, ze kterého tato aplikace živě čte data.</p>
+          <h2 class="section-title">Zdrojová data &amp; Archiv výsledkové listiny</h2>
+          <p class="section-desc">Přímé odkazy ke stažení lokálně archivovaného PDF originálu i strukturovaného CSV/JSON souboru, ze kterého aplikace živě čte.</p>
         </div>
+        <span class="section-meta">OTEVŘENÁ DATA PRO DALŠÍ ZPRACOVÁNÍ</span>
       </div>
 
       <div class="grid-3">
         <div class="story-card">
-          <h3>📄 Archivní PDF výsledkovka</h3>
-          <p>Lokálně zaarchivovaná kopie oficiální 13stránkové výsledkové listiny z roku 2026 (533 kB). Neztratí se, ani kdyby původní odkaz na Google Drive vypršel.</p>
+          <h3>Archivní PDF výsledkovka</h3>
+          <p>Lokálně zaarchivovaná kopie oficiální 13stránkové výsledkové listiny z roku 2026 (533 kB).</p>
           <div style="display:flex; flex-wrap:wrap; gap:0.5rem; margin-top:0.8rem;">
-            <a class="btn btn-primary btn-sm" href="Vysledkova_listina_2026.pdf" download="Vysledkova_listina_2026.pdf">⬇️ Stáhnout PDF</a>
-            <a class="btn btn-sm" href="Vysledkova_listina_2026.pdf" target="_blank" rel="noopener">👁️ Otevřít PDF</a>
-            <a class="btn btn-sm" href="https://drive.google.com/file/d/1nMTf2EDx5GF3pgA-SBE6DoQg2-LFUAPg/view?usp=sharing" target="_blank" rel="noopener">☁️ Google Drive originál</a>
+            <a class="btn btn-primary btn-sm" href="Vysledkova_listina_2026.pdf" download="Vysledkova_listina_2026.pdf">Stáhnout PDF</a>
+            <a class="btn btn-sm" href="Vysledkova_listina_2026.pdf" target="_blank" rel="noopener">Otevřít PDF</a>
+            <a class="btn btn-sm" href="https://drive.google.com/file/d/1nMTf2EDx5GF3pgA-SBE6DoQg2-LFUAPg/view?usp=sharing" target="_blank" rel="noopener">Google Drive originál</a>
           </div>
         </div>
 
         <div class="story-card">
-          <h3>📊 Zdrojové CSV (primární zdroj aplikace)</h3>
-          <p>Vygenerované UTF-8 CSV (409 startovních čísel + vypočtená pořadí, rychlost km/h, tempo min/km, skokani mimo vlnu a anomálie). Aplikace ho načítá přímo přes <code>fetch('vysledky_2026.csv')</code>.</p>
+          <h3>Zdrojové CSV (primární zdroj aplikace)</h3>
+          <p>Vygenerované UTF-8 CSV (409 řádků + vypočtená pořadí, rychlost km/h, tempo min/km a anomálie). Aplikace ho načítá přímo přes <code>fetch('vysledky_2026.csv')</code>.</p>
           <div style="display:flex; flex-wrap:wrap; gap:0.5rem; margin-top:0.8rem;">
-            <a class="btn btn-primary btn-sm" href="vysledky_2026.csv" download="vysledky_2026.csv">⬇️ Stáhnout CSV</a>
-            <a class="btn btn-sm" href="vysledky_2026.csv" target="_blank" rel="noopener">🔗 Přímý odkaz na CSV</a>
+            <a class="btn btn-primary btn-sm" href="vysledky_2026.csv" download="vysledky_2026.csv">Stáhnout CSV</a>
+            <a class="btn btn-sm" href="vysledky_2026.csv" target="_blank" rel="noopener">Přímý odkaz na CSV</a>
           </div>
         </div>
 
         <div class="story-card">
-          <h3>🧩 JSON dataset &amp; Reprodukovatelnost</h3>
-          <p>Kompletní strukturovaný JSON se souhrny, statistikami 26 vln a všemi týmy, včetně Python generátoru <code>build_data.py</code> pro vlastní analýzy.</p>
+          <h3>JSON dataset &amp; Reprodukovatelnost</h3>
+          <p>Kompletní strukturovaný JSON se souhrny, statistikami 26 vln a všemi týmy, včetně Python generátoru <code>build_data.py</code>.</p>
           <div style="display:flex; flex-wrap:wrap; gap:0.5rem; margin-top:0.8rem;">
-            <a class="btn btn-primary btn-sm" href="vysledky_2026.json" download="vysledky_2026.json">⬇️ Stáhnout JSON</a>
-            <a class="btn btn-sm" href="vysledky_2026.json" target="_blank" rel="noopener">🔗 Přímý odkaz na JSON</a>
-            <a class="btn btn-sm" href="build_data.py" target="_blank" rel="noopener">🐍 build_data.py</a>
+            <a class="btn btn-primary btn-sm" href="vysledky_2026.json" download="vysledky_2026.json">Stáhnout JSON</a>
+            <a class="btn btn-sm" href="vysledky_2026.json" target="_blank" rel="noopener">Přímý odkaz na JSON</a>
+            <a class="btn btn-sm" href="build_data.py" target="_blank" rel="noopener">build_data.py</a>
           </div>
         </div>
       </div>
